@@ -364,7 +364,7 @@ def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None, smo
     refined_coords = refine_com(raw_image, image, radius, coords, max_iterations=max_iterations, characterize=characterize)
     # this should spit out a dataframe acctually
     if len(refined_coords) == 0:
-        return refined_coords
+        return pd.DataFrame({'y': [0], 'x': [0], 'mass': [0]})
 
     # Flat peaks return multiple nearby maxima. Eliminate duplicates.
     if np.all(np.greater(separation, 0)):
@@ -388,8 +388,8 @@ def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None, smo
         refined_coords = refined_coords.loc[condition].copy()
 
     if len(refined_coords) == 0:
-        #warnings.warn("No maxima survived mass- and size-based filtering. "
-        return refined_coords
+        #print("No maxima survived mass- and size-based filtering. ")
+        return pd.DataFrame({'y': [0], 'x': [0], 'mass': [0]})
 
     if topn is not None and len(refined_coords) > topn:
         # go through numpy for easy pandas backwards compatibility
@@ -404,6 +404,7 @@ def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None, smo
     # Tag it on; this is helpful for parallelization.
     if hasattr(raw_image, 'frame_no') and raw_image.frame_no is not None:
         refined_coords['frame'] = int(raw_image.frame_no)
+    
     return refined_coords
 
 

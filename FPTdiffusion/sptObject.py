@@ -3,6 +3,9 @@
 import numpy as np
 import pandas as pd
 
+from .spt import *
+from .mpt import *
+from .analysis import *
 
 
 class sptObject():
@@ -23,6 +26,19 @@ class sptObject():
             self.n_frames = array.shape[0]  # Assume time is axis 0
 
         self.get_statistics()  # Automatically gather stats at init
+
+        self.params = {
+            'diameter': (7, 7),
+            'minmass': 20,
+            'separation': (15,15),
+            'smoothing_size': None,
+            'threshold': None,
+            'percentile': 64,
+            'topn': None,
+            'preprocess': False,
+            'characterize': False
+        }
+        print("Initialization Parameters: ", self.params)
         
     def get_statistics(self):
         '''
@@ -63,3 +79,28 @@ class sptObject():
             self.statistics['type'] = ['video'] * self.n_frames
 
         return self.statistics
+    
+    def StandardSPT(self):
+        # if image
+        if self.ndim == 2:
+            # STEP 1. GET ALL THE POSITIONS
+            result_df = batch(self.img, self.params)
+            # STEP 2. Get all the refined positions
+            self.refined_df = subpixelGaussian(self.img, result_df, 15)
+            # STEP 3. obtain background information
+            self.sigbgd_df = bgdSignal(self.img, self.refined_df, 1)
+
+        # if video
+        elif self.ndim == 3:
+            # STEP 1. GET ALL THE POSITIONS
+            result_df = batch(self.video, self.params)
+            # STEP 2. Get all the refined positions
+            self.refined_df = subpixelGaussian(self.video, result_df, 15)
+            # STEP 3. obtain background information
+            self.sigbgd_df = bgdSignal(self.video, self.refined_df, 1)
+
+    def GetSptResults(self):
+        return self.refined_df
+    
+    def GetSigResults(self):
+        return self.sigbgd_df

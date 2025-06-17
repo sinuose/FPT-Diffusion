@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from FPTdiffusion.spt import locate
-from FPTdiffusion.mpt import batch
-from FPTdiffusion.analysis import *
+from FPTdiffusion.sptObject import *
 
 # FUNCTIONS
 def add_heavy_noise(image, noise_level=0.5):
@@ -59,26 +57,12 @@ for j in range(15):
     video.append(img)
 
 # Running the batch function
+spt = sptObject(np.array(video))
+spt.StandardSPT()
+refined_df = spt.GetSptResults()
+sigbgd_df = spt.GetSigResults()
 
-params = {
-    'diameter': (7, 7),
-    'minmass': 20,
-    'separation': (15,15),
-    'smoothing_size': None,
-    'threshold': None,
-    'percentile': 64,
-    'topn': None,
-    'preprocess': False,
-    'characterize': False
-}
-
-# resulting dataframe. 
-result_df = batch(video, params)
-
-refined_df = subpixelGaussian(video, result_df, 15)
-
-print(refined_df)
-
+print(sigbgd_df)
 
 #PLOTTING 
 

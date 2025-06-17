@@ -3,7 +3,6 @@ import pandas as pd
 
 from scipy.optimize import curve_fit
 
-
 def gaussian_2d(xy, A, x0, y0, sigma_x, sigma_y, theta, offset):
     x, y = xy
     x0 = float(x0)
@@ -119,3 +118,60 @@ def subpixelGaussian(img, results, box_size=7, function=gaussian_2d):
             refined.at[i, 'fit_success'] = True
 
     return refined
+
+
+def bgdSignal(video, refined, sigma_multiplier=2):
+    """
+    Estimate background mean and noise from video using refined Gaussian fit results.
+
+    Parameters:
+        video (list or ndarray): List/array of 2D images (frames)
+        refined (DataFrame): Output from subpixelGaussian() with x_fit, y_fit, sigma_x, sigma_y
+        sigma_multiplier (float): Number of sigmas to mask out each Gaussian
+
+    Returns:
+        bgd_stats (DataFrame): One row per frame with mean and std of background pixels
+    """
+    H, W = video[0].shape
+    bgd_stats = []
+
+    for frame_num, frame in enumerate(video):
+        frame_data = refined[(refined['frame'] == frame_num) & (refined['fit_success'])]
+
+        # Start with all pixels valid
+        mask = np.ones((H, W), dtype=bool)
+
+        yy, xx = np.meshgrid(np.arange(H), np.arange(W), indexing='ij')
+
+        for _, row in frame_data.iterrows():
+            x0, y0 = row['x_fit'], row['y_fit']
+            sx, sy = row['sigma_x'], row['sigma_y']
+            if any(np.isnan([x0, y0, sx, sy])):
+                continue
+
+            # Convert from image coords to pixel grid coords
+            # Assuming your image spans [-10,10] in x and y
+            X = np.linspace(-10, 10, W)
+            Y = np.linspace(-10, 10, H)
+            x_pixel = np.interp(x0, X, np.arange(W))
+            y_pixel = np.interp(y0, Y, np.arange(H))
+
+            # Construct elliptical mask
+            dx = xx - x_pixel
+            dy = yy - y_pixel
+            region_mask = ((dx / (sigma_multiplier * sx * W / 20))**2 +
+                           (dy / (sigma_multiplier * sy * H / 20))**2) <= 1
+            mask &= ~region_mask  # remove area within Gaussian
+
+        background_pixels = frame[mask]
+        bg_mean = np.mean(background_pixels)
+        bg_std = np.std(background_pixels)
+
+        bgd_stats.append({
+            'frame': frame_num,
+            'bg_mean': bg_mean,
+            'bg_std': bg_std,
+            'num_pixels_sampled': np.sum(mask)
+        })
+
+    return pd.DataFrame(bgd_stats)
