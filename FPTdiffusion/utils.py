@@ -1,3 +1,34 @@
+import numpy as np
+
+def convert_to_int(image, dtype='uint8'):
+    """Convert the image to integer and normalize if applicable.
+
+    Clips all negative values to 0. Does nothing if the image is already
+    of integer type.
+
+    Parameters
+    ----------
+    image : ndarray
+    dtype : numpy dtype
+        dtype to convert to. If the image is already of integer type, this
+        argument is ignored. Must be integer-subdtype. Default 'uint8'.
+
+    Returns
+    -------
+    tuple of (scale_factor, image)
+    """
+    if np.issubdtype(image.dtype, np.integer):
+        # Do nothing, image is already of integer type.
+        return 1., image
+    max_value = np.iinfo(dtype).max
+    image_max = image.max()
+    if image_max == 0:  # protect against division by zero
+        scale_factor = 1.
+    else:
+        scale_factor = max_value / image_max
+    return scale_factor, (scale_factor * image.clip(min=0.)).astype(dtype)
+
+
 def validate_tuple(value, ndim):
     if not hasattr(value, '__iter__'):
         return (value,) * ndim
