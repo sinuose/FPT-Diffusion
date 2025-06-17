@@ -1,0 +1,19 @@
+[project]
+name = "FPT-Diffusion"
+version = "0.0.1"
+authors = [
+  { name="Martin Jasinski", email="martinj1@student.ubc.ca" },
+]
+description = "Free Particle Tracking (for) Diffusion. SPT, MPT, image processing, and other tools for research scientists around the world. "
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICENSE.md"]
+
+[project.urls]
+Homepage = "https://github.com/sinuose/FPT-Diffusion"
+Issues = "https://github.com/sinuose/FPT-Diffusion/issues"

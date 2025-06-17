@@ -281,11 +281,10 @@ def refine_com(raw_image, image, radius, coords, max_iterations=10,
 
     return pd.DataFrame(refined, columns=columns, index=index)
 
-def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None,
-           noise_size=1, smoothing_size=None, threshold=None, invert=False,
-           percentile=64, topn=None, preprocess=True, max_iterations=10,
-           filter_before=None, filter_after=None,
-           characterize=True):
+
+
+def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None, smoothing_size=None, threshold=None,
+           percentile=64, topn=None, preprocess=True, max_iterations=10, characterize=True):
 
     # Validate parameters and set defaults.
     raw_image = np.squeeze(raw_image)
@@ -322,15 +321,12 @@ def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None,
         else:
             threshold = 1
 
-    # Invert the image if necessary
-    if invert:
-        print("fix later")
-        #raw_image = invert_image(raw_image)
-
+    
     # Determine `image`: the image to find the local maxima on.
     if preprocess:
-        print('fix later')
-        image = raw_image#bandpass(raw_image, noise_size, smoothing_size, threshold)
+        print('>Preprocessing must be currently done manually.')
+        image = raw_image
+        #bandpass(raw_image, noise_size, smoothing_size, threshold)
     else:
         image = raw_image
 
@@ -358,6 +354,10 @@ def locate(raw_image, diameter, minmass=None, maxsize=None, separation=None,
     # excludes detection of small features close to large, bright features
     # using the `maxsize` argument.
     coords = grey_dilation(image, separation, percentile, margin, precise=False)
+
+    # 0 particle check
+    if np.shape(coords) == (0,2):
+        return pd.DataFrame({'y': [0], 'x': [0], 'mass': [0]})
 
     # Refine their locations and characterize mass, size, etc.
     # need this function 
