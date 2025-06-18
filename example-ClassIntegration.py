@@ -57,7 +57,7 @@ for j in range(15):
     video.append(img)
 
 # Running the batch function
-spt = sptObject(np.array(video))
+spt = sptObject("cat")
 spt.StandardSPT()
 refined_df = spt.GetSptResults()
 sigbgd_df = spt.GetSigResults()

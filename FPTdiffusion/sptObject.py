@@ -80,27 +80,37 @@ class sptObject():
 
         return self.statistics
     
-    def StandardSPT(self):
+    def StandardSPT(self, refine=True, sigbgd=True):
         # if image
         if self.ndim == 2:
             # STEP 1. GET ALL THE POSITIONS
-            result_df = batch(self.img, self.params)
+            self.result_df = batch(self.img, self.params)
             # STEP 2. Get all the refined positions
-            self.refined_df = subpixelGaussian(self.img, result_df, 15)
+            if refine:
+                self.result_df = subpixelGaussian(self.img, result_df, 15)
             # STEP 3. obtain background information
-            self.sigbgd_df = bgdSignal(self.img, self.refined_df, 1)
+            if sigbgd:
+                self.sigbgd_df = bgdSignal(self.img, self.result_df, 1)
 
         # if video
         elif self.ndim == 3:
             # STEP 1. GET ALL THE POSITIONS
-            result_df = batch(self.video, self.params)
+            self.result_df = batch(self.video, self.params)
             # STEP 2. Get all the refined positions
-            self.refined_df = subpixelGaussian(self.video, result_df, 15)
+            if refine:
+                self.result_df = subpixelGaussian(self.video, self.result_df, 15)
             # STEP 3. obtain background information
-            self.sigbgd_df = bgdSignal(self.video, self.refined_df, 1)
+            if sigbgd:
+                self.sigbgd_df = bgdSignal(self.video, self.result_df, 1)
 
     def GetSptResults(self):
-        return self.refined_df
+        try:
+            return self.result_df
+        except Exception as e:
+            print(e)
     
     def GetSigResults(self):
-        return self.sigbgd_df
+        try:
+            return self.sigbgd_df
+        except Exception as e:
+            print(e)

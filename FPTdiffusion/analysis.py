@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from scipy.optimize import curve_fit
+from tqdm import tqdm
 
 def gaussian_2d(xy, A, x0, y0, sigma_x, sigma_y, theta, offset):
     x, y = xy
@@ -83,7 +84,7 @@ def subpixelGaussian(img, results, box_size=7, function=gaussian_2d):
     refined['offset'] = np.nan
     refined['fit_success'] = False
 
-    for i, row in refined.iterrows():
+    for i, row in tqdm(refined.iterrows()):
         x, y = row['x'], row['y']
         frame_idx = int(row['frame']) if np.ndim(img) == 3 else None
 
