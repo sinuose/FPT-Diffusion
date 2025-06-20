@@ -4,6 +4,9 @@ import pandas as pd
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
+from scipy.spatial.distance import cdist
+from scipy.optimize import linear_sum_assignment
+
 def gaussian_2d(xy, A, x0, y0, sigma_x, sigma_y, theta, offset):
     x, y = xy
     x0 = float(x0)
@@ -176,3 +179,83 @@ def bgdSignal(video, refined, sigma_multiplier=2):
         })
 
     return pd.DataFrame(bgd_stats)
+
+
+def gcHungarian(df, max_distance=30, birth_death_cost=50):
+    """
+    Links particles across frames in a DataFrame using the Hungarian algorithm,
+    allowing for particles to appear and disappear (grand canonical behavior).
+
+    Parameters:
+        df: DataFrame with at least columns ['frame', 'x', 'y']
+        max_distance: float, max allowed distance to consider a match
+        birth_death_cost: float, penalty for particle birth or death
+
+    Returns:
+        DataFrame with an added 'particle' column labeling trajectories
+    """
+    #only requiredment is a df with frame indicies.
+    if set(['frame','x', 'y']).issubset(df.columns):
+        pass
+    else:
+        raise ValueError("Video must be analyzed and contain frame and trajectory information.")
+
+    # loop over frames and get variables
+
+    # Ensure particle column exists
+    df = df.copy()
+    df['particle'] = np.nan
+    next_particle_id = 0
+
+    frames = sorted(df['frame'].unique())
+
+    # Initialize first frame with unique particle IDs
+    current_frame = df[df['frame'] == frames[0]].copy()
+    current_frame['particle'] = np.arange(len(current_frame))
+    df.loc[current_frame.index, 'particle'] = current_frame['particle']
+    next_particle_id = len(current_frame)
+
+    for i in range(len(frames)-1):
+        f_curr = frames[i]
+        f_next = frames[i+1]
+
+        curr_particles = df[df['frame'] == f_curr]
+        next_particles = df[df['frame'] == f_next]
+
+        A = curr_particles[['x', 'y']].to_numpy()
+        B = next_particles[['x', 'y']].to_numpy()
+
+        if len(A) == 0 or len(B) == 0:
+            # All are births or deaths
+            if len(B) > 0:
+                df.loc[next_particles.index, 'particle'] = np.arange(next_particle_id, next_particle_id + len(B))
+                next_particle_id += len(B)
+            continue
+
+        # Step 1: Build distance matrix
+        D = cdist(A, B)
+        D[D > max_distance] = np.inf
+
+        # Step 2: Pad to square cost matrix with birth/death costs
+        N, M = D.shape
+        size = max(N, M)
+        C = np.full((size, size), birth_death_cost)
+        C[:N, :M] = D
+
+        # Step 3: Solve Hungarian assignment
+        row_ind, col_ind = linear_sum_assignment(C)
+
+        for r, c in zip(row_ind, col_ind):
+            if r < N and c < M and C[r, c] < birth_death_cost:
+                # Matched existing particle
+                pid = curr_particles.iloc[r]['particle']
+                df_idx = next_particles.index[c]
+                df.at[df_idx, 'particle'] = pid
+            elif r >= N and c < M:
+                # Birth (new particle)
+                df_idx = next_particles.index[c]
+                df.at[df_idx, 'particle'] = next_particle_id
+                next_particle_id += 1
+            # else: death (do nothing for r < N and c >= M)
+
+    return df

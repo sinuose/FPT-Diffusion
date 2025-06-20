@@ -87,7 +87,7 @@ class sptObject():
             self.result_df = batch(self.img, self.params)
             # STEP 2. Get all the refined positions
             if refine:
-                self.result_df = subpixelGaussian(self.img, result_df, 15)
+                self.result_df = subpixelGaussian(self.img, self.result_df, 15)
             # STEP 3. obtain background information
             if sigbgd:
                 self.sigbgd_df = bgdSignal(self.img, self.result_df, 1)
@@ -102,6 +102,16 @@ class sptObject():
             # STEP 3. obtain background information
             if sigbgd:
                 self.sigbgd_df = bgdSignal(self.video, self.result_df, 1)
+
+    def LinkParticles(self, max_distance = 30, birth_death_cost = 100):
+        # only requiredment is a results_df with frame indicies.
+        if set(['frame','x', 'y']).issubset(self.result_df.columns):
+            pass
+        else:
+            raise ValueError("Video must be analyzed and contain frame and trajectory information.")
+
+        # now, run the custom grand cannonical hungarian algorithm
+        self.result_df = gcHungarian(self.result_df, max_distance, birth_death_cost )
 
     def GetSptResults(self):
         try:

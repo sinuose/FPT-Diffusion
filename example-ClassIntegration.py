@@ -57,11 +57,18 @@ for j in range(15):
     video.append(img)
 
 # Running the batch function
-spt = sptObject("cat")
+spt = sptObject(np.array(video))
+
 spt.StandardSPT()
+spt.LinkParticles(100,2000)
+
 refined_df = spt.GetSptResults()
+
 sigbgd_df = spt.GetSigResults()
 
+
+
+print(refined_df)
 print(sigbgd_df)
 
 #PLOTTING 
@@ -99,6 +106,7 @@ def plot_gaussian_movie(video, refined, interval=100, save_path=None):
                 linewidth=1
             )
             ax.add_patch(e)
+            ax.text(row['x_fit'], row['y_fit'], str(row['particle']), color='lightsteelblue')
         ax.set_title(f"Frame {frame_num}")
         ax.set_xlim(0, W)
         ax.set_ylim(H, 0)  # Flip y-axis for image convention
